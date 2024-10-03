@@ -27,11 +27,17 @@ importers:
         specifier: 14.2.14
         version: 14.2.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
-        specifier: ^18
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
+      regions:
+        specifier: link:wavesurfer.js/dist/plugins/regions
+        version: link:wavesurfer.js/dist/plugins/regions
+      wavesurfer.js:
+        specifier: ^7.8.6
+        version: 7.8.6
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -1719,6 +1725,9 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  wavesurfer.js@7.8.6:
+    resolution: {integrity: sha512-EDexkMwkkQBTWruhfWQRkTtvRggtKFTPuJX/oZ5wbIZEfyww9EBeLr2mtkxzA1S8TlWPx6adY5WyjOlNYNyHSg==}
 
   which-boxed-primitive@1.0.2:
     resolution: {integrity: sha512-bwZdv0AKLpplFY2KZRX6TvyuN7ojjr7lwkg6ml0roIy9YeuSr7JS372qlNW18UQYzgYK9ziGcerWqZOmEn9VNg==}
@@ -3683,6 +3692,8 @@ snapshots:
       '@types/react': 18.3.11
 
   util-deprecate@1.0.2: {}
+
+  wavesurfer.js@7.8.6: {}
 
   which-boxed-primitive@1.0.2:
     dependencies:
