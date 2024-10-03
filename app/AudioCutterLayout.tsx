@@ -1,23 +1,23 @@
 'use client'
 import { AppShell, Stack, Text, Button } from '@mantine/core';
 import {
-  IconMenu2,IconEraser,
+  IconMenu2, IconEraser,
   IconArrowsSplit,
-  IconWaveSine,IconKeyframes,
+  IconWaveSine, IconKeyframes,
   IconScissors,
-  IconPuzzle,IconMicrophone,
-  IconDisc,IconHelp
+  IconPuzzle, IconMicrophone,
+  IconDisc, IconHelp
 } from '@tabler/icons-react';
 
 import { GB } from 'country-flag-icons/react/3x2';
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import WaveSurfer from "wavesurfer.js";
 
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 
-export default function AudioCutterLayout({ children }: { children: React.ReactNode }) {
+export default function AudioCutterLayout({ children }) {
   const [waveSurfer, setWaveSurfer] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
   const [audioBuffer, setAudioBuffer] = useState(null);
@@ -26,7 +26,6 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
   const [volume, setVolume] = useState(1);
   const [zoom, setZoom] = useState(100);
   const [duration, setDuration] = useState(0);
-
 
   const [isAudioReady, setIsAudioReady] = useState(false);
   const waveformRef = useRef(null);
@@ -38,6 +37,17 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
   useEffect(() => {
     audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
 
+    return () => {
+      if (waveSurfer) {
+        waveSurfer.destroy();
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (waveformRef.current && !waveSurfer) {
       const ws = WaveSurfer.create({
         container: waveformRef.current,
@@ -66,7 +76,6 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
         setDuration(ws.getDuration());
         setIsAudioReady(true);
 
-     
         if (regionsRef.current) {
           regionsRef.current.addRegion({
             start: 1,
@@ -82,29 +91,18 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
       });
 
       ws.on("error", (error) => {
-
         console.error("WaveSurfer error:", error);
         setIsAudioReady(false);
       });
     }
+  }, [waveSurfer]);
 
-    return () => {
-      if (waveSurfer) {
-        waveSurfer.destroy();
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-    };
-  }, []);
-
-  const handleFileChange = async (e) => {
+  const handleFileChange = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (file && waveSurfer) {
       setIsAudioReady(false);
       setAudioFile(file);
 
-      
       try {
         const arrayBuffer = await file.arrayBuffer();
         const decodedData = await audioContextRef.current.decodeAudioData(arrayBuffer);
@@ -116,23 +114,22 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
         console.error("Error decoding audio data:", error);
       }
     }
-  };
+  }, [waveSurfer]);
 
-  const handlePlayPause = () => {
+  const handlePlayPause = useCallback(() => {
     if (waveSurfer) {
-      
       waveSurfer.playPause();
       setPlaying(!playing);
     }
-  };
+  }, [waveSurfer, playing]);
 
-  const handleReload = () => {
+  const handleReload = useCallback(() => {
     if (waveSurfer) {
       waveSurfer.stop();
       waveSurfer.play();
       setPlaying(true);
     }
-  };
+  }, [waveSurfer]);
 
   useEffect(() => {
     if (waveSurfer) waveSurfer.setVolume(volume);
@@ -142,10 +139,8 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
     if (waveSurfer && waveSurfer.isReady) waveSurfer.zoom(zoom);
   }, [zoom, waveSurfer]);
 
-  const handleTrimAudio = () => {
-    if (!isAudioReady || !audioBuffer)
-      
-      {
+  const handleTrimAudio = useCallback(() => {
+    if (!isAudioReady || !audioBuffer) {
       console.error("Audio is not ready for trimming.");
       return;
     }
@@ -166,7 +161,6 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
         const newBuffer = audioContextRef.current.createBuffer(
           audioBuffer.numberOfChannels,
           Math.floor((end - start) * audioBuffer.sampleRate),
-
           audioBuffer.sampleRate
         );
 
@@ -179,7 +173,6 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
           newBuffer.copyToChannel(trimmedData, channel);
         }
 
-      
         const offlineAudioContext = new OfflineAudioContext(newBuffer.numberOfChannels, newBuffer.length, newBuffer.sampleRate);
         const source = offlineAudioContext.createBufferSource();
         source.buffer = newBuffer;
@@ -190,7 +183,6 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
           const wavBlob = bufferToWave(renderedBuffer, renderedBuffer.length);
           const blobUrl = URL.createObjectURL(wavBlob);
 
-          
           waveSurfer.load(blobUrl);
           setAudioBuffer(newBuffer);
         }).catch((err) => {
@@ -198,12 +190,10 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
         });
       }
     }
-  };
+  }, [isAudioReady, audioBuffer, waveSurfer]);
 
-  // convert this to wav
   function bufferToWave(abuffer, len) {
     const numOfChan = abuffer.numberOfChannels;
-
     const length = len * numOfChan * 2 + 44;
     const buffer = new ArrayBuffer(length);
     const view = new DataView(buffer);
@@ -212,6 +202,16 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
     let offset = 0;
     let pos = 0;
 
+    function setUint16(data) {
+      view.setUint16(pos, data, true);
+      pos += 2;
+    }
+
+    function setUint32(data) {
+      view.setUint32(pos, data, true);
+      pos += 4;
+    }
+
     // write WAVE header
     setUint32(0x46464952);
     setUint32(length - 8);
@@ -219,7 +219,6 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
     setUint32(0x20746d66);
     setUint32(16);
     setUint16(1);
-
     setUint16(numOfChan);
     setUint32(abuffer.sampleRate);
     setUint32(abuffer.sampleRate * 2 * numOfChan);
@@ -242,19 +241,7 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
       offset++;
     }
 
-
     return new Blob([buffer], { type: "audio/wav" });
-
-
-    function setUint16(data) {
-      view.setUint16(pos, data, true);
-      pos += 2;
-    }
-
-    function setUint32(data) {
-      view.setUint32(pos, data, true);
-      pos += 4;
-    }
   }
 
   return (
@@ -273,7 +260,6 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
             <NavbarIcon icon={IconArrowsSplit} />
             <NavbarIcon icon={IconWaveSine} />
             <NavbarIcon icon={IconKeyframes} />
-
             <NavbarIcon icon={IconScissors} />
             <NavbarIcon icon={IconPuzzle} />
             <NavbarIcon icon={IconMicrophone} />
@@ -295,7 +281,6 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
           <div ref={timelineRef} style={{ width: "100%", height: "50px" }}></div>
 
           <div className="controls">
-
             <Button variant="filled" color="blue" onClick={handlePlayPause} disabled={!isAudioReady}>{playing ? "Pause" : "Play"}</Button>
             <Button variant="filled" color="blue" onClick={handleReload} disabled={!isAudioReady}>Reload</Button>
             <Button variant="filled" color="blue" onClick={handleTrimAudio} disabled={!isAudioReady}>Trim Audio</Button>
@@ -313,13 +298,12 @@ export default function AudioCutterLayout({ children }: { children: React.ReactN
               </div>
             </div>
           )}
-
         </Stack>
       </AppShell.Main>
     </AppShell>
   );
 }
 
-function NavbarIcon({ icon: Icon }: { icon: React.ElementType }) {
+function NavbarIcon({ icon: Icon }) {
   return <Icon size={24} style={{ cursor: 'pointer' }} />;
 }

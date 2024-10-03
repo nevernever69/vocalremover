@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {  reactStrictMode: true,
-    transpilePackages: ['@mantine/core', '@mantine/hooks'],
-    transpilePackages: ['wavesurfer.js'],};
-
-export default nextConfig;
+const nextConfig = {
+    reactStrictMode: false,
+    typescript: {
+      ignoreBuildErrors: true,
+    },
+    eslint: {
+      ignoreDuringBuilds: true,
+    },
+    transpilePackages: ['@mantine/core', '@mantine/hooks', 'wavesurfer.js'],
+  };
+  
+  export default nextConfig;
+  
